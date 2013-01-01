@@ -1,0 +1,12 @@
+/**
+ * dcoy/opcodes.h
+ *
+ * Aliases for all opcodes
+ *
+ * (C) 2012, Matthew Frazier
+ * Released under the MIT license - see LICENSE for details
+ */
+
+#ifndef _dcoy_opcodes_h
+#define _dcoy_opcodes_h
+

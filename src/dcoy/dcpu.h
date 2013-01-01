@@ -11,7 +11,9 @@
 #define _dcoy_dcpu_h
 
 #include <stdbool.h>
-#include "dcoy/constants.h"
+#include "dcoy/specs.h"
+
+#define SIGN(word)  ((dcoy_sword) (word))
 
 /* Execution flags */
 
@@ -32,9 +34,9 @@
 typedef struct dcoy_dcpu16 {
     unsigned int cycles;
     unsigned int flags;
-    char error[DCOY_ERROR_MAXLEN];
+    char error[DCOY_DCPU_ERROR_MAXLEN];
 
-    dcoy_word reg[DCOY_REGISTERS];
+    dcoy_word reg[DCOY_REG_COUNT];
     dcoy_word pc;
     dcoy_word sp;
     dcoy_word ex;
@@ -42,7 +44,7 @@ typedef struct dcoy_dcpu16 {
 
     dcoy_word mem[DCOY_MEM_WORDS];
 
-    dcoy_word iq[DCOY_INTERRUPT_QUEUE];
+    dcoy_word iq[DCOY_INT_QUEUE_SIZE];
     unsigned int iq_front;
     unsigned int iq_back;
 
