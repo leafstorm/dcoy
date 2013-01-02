@@ -3,7 +3,7 @@
  *
  * Shorter names for some of the more common constants
  *
- * (C) 2012, Matthew Frazier
+ * (C) 2013, Matthew Frazier
  * Released under the MIT license - see LICENSE for details
  */
 

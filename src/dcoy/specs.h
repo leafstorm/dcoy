@@ -3,7 +3,7 @@
  *
  * Constants and typedefs describing the DCPU-16
  *
- * (C) 2012, Matthew Frazier
+ * (C) 2013, Matthew Frazier
  * Released under the MIT license - see LICENSE for details
  */
 

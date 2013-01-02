@@ -3,7 +3,7 @@
  *
  * The primary data structures and emulator loop - implementation
  *
- * (C) 2012, Matthew Frazier
+ * (C) 2013, Matthew Frazier
  * Released under the MIT license - see LICENSE for details
  */
 

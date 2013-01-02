@@ -4,7 +4,7 @@
  * A simple tool that runs a DCPU image and dumps the machine state
  * (demu = debugging emulator)
  *
- * (C) 2012, Matthew Frazier
+ * (C) 2013, Matthew Frazier
  * Released under the MIT license - see LICENSE for details
  */
 
