@@ -5,7 +5,7 @@ CFLAGS=-g -O2 -Wall -Wextra -Isrc $(MYCFLAGS)
 ### Table of Contents ###
 
 DCOY_LIBRARY=lib/dcoy.a
-DCOY_OBJECTS=src/dcoy/dcpu.o src/dcoy/code.o
+DCOY_OBJECTS=src/dcoy/code.o src/dcoy/dcpu.o src/dcoy/dcpu/exec.o
 
 DCOY_TOOLS=bin/dcoy-demu
 

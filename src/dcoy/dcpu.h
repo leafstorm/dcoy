@@ -16,10 +16,9 @@
 
 /* Execution flags */
 
-#define DCOY_FLAG_QUEUE_INTS    (1 << 0)
-#define DCOY_FLAG_HALT          (1 << 4)
-#define DCOY_FLAG_ON_FIRE       (1 << 5)
-#define DCOY_FLAG_ERROR         (1 << 8)
+#define DCOY_DCPU_FLAG_QUEUE_INTS       (1 << 0)
+#define DCOY_DCPU_FLAG_HALT             (1 << 4)
+#define DCOY_DCPU_FLAG_ON_FIRE          (1 << 5)
 
 #define dcoy_dcpu_flag(d, flag)         ((d)->flags & (flag))
 #define dcoy_dcpu_flag_set(d, flag)     ((d)->flags |= (flag))
@@ -28,12 +27,9 @@
 
 /* DCPU emulator structure */
 
-#define DCOY_DCPU_ERROR_MAXLEN   64
-
 typedef struct dcoy_dcpu16 {
     unsigned int cycles;
     unsigned int flags;
-    char error[DCOY_DCPU_ERROR_MAXLEN];
 
     dcoy_word reg[DCOY_REG_COUNT];
     dcoy_word pc;
@@ -47,25 +43,46 @@ typedef struct dcoy_dcpu16 {
     unsigned int iq_front;
     unsigned int iq_back;
 
+    unsigned int error_code;
+    const char *error_message;
+    dcoy_word error_data;
+    dcoy_word error_pc;
+
 } dcoy_dcpu16;
 
 
 /* Instance management functions */
 
 dcoy_dcpu16 *dcoy_dcpu_create ();
-void dcoy_dcpu_reset (dcoy_dcpu16 *d);
-
-void dcoy_dcpu_error (dcoy_dcpu16 *d, const char *format, ...);
-void dcoy_dcpu_recover (dcoy_dcpu16 *d);
+void dcoy_dcpu_initialize (dcoy_dcpu16 *d);
 
 
-/* Interpreter loop */
+/* Errors */
+
+#include "dcoy/dcpu/errors.h"
+
+void dcoy_dcpu_error_set (dcoy_dcpu16 *d, unsigned int code,
+                          const char *message, dcoy_word data);
+void dcoy_dcpu_error_clear (dcoy_dcpu16 *d);
+
+#define dcoy_dcpu_error(d, error, data) dcoy_dcpu_error_set( \
+    d, DCOY_DCPU_ERROR_##error, DCOY_DCPU_ERROR_MSG_##error, data \
+)
+
+
+/* Instruction execution */
 
 #define dcoy_dcpu_read_inst(inst, d, offset) \
     dcoy_inst_read((inst), (d)->mem, offset, DCOY_MEM_WORDS)
 
 #define dcoy_dcpu_read_pc(inst, d) \
     dcoy_inst_read((inst), (d)->mem, (d)->pc, DCOY_MEM_WORDS)
+
+/* implemented in dcoy/dcpu/exec.c */
+bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst);
+
+
+/* Interpreter loop */
 
 bool dcoy_dcpu_step (dcoy_dcpu16 *d);
 

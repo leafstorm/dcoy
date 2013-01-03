@@ -69,5 +69,6 @@ int main (int argc, char *argv[]) {
         running = dcoy_dcpu_step(d);
     }
 
-    printf("        Error: %s\n", d->error);
+    printf("        Error: %s 0x%04x (%d) at 0x%04x\n",
+           d->error_message, d->error_data, d->error_data, d->error_pc);
 }
