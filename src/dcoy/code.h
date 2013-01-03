@@ -12,13 +12,50 @@
 
 #include "dcoy/specs.h"
 
+/* Instruction data structure */
+
+typedef struct dcoy_arg {
+    uint8_t type;
+    uint8_t reg;
+    dcoy_word data;
+} dcoy_arg;
+
+
+typedef struct dcoy_inst {
+    bool special;
+    uint8_t opcode;
+    dcoy_arg a;
+    dcoy_arg b;
+} dcoy_inst;
+
+
 /* Instruction parsing */
+
+unsigned int dcoy_inst_read (dcoy_inst *inst, dcoy_word *buf,
+                             unsigned int offset, unsigned int bufsize);
 
 #define dcoy_inst_opcode(inst)  ((inst) & 0x1f)
 #define dcoy_inst_arg_a(inst)   (((inst) & 0xfc00) >> 10)
 #define dcoy_inst_arg_b(inst)   (((inst) & 0x3e0) >> 5)
 
-void dcoy_inst_disassemble (dcoy_word *code, char *out);
+
+/* Argument types */
+/* R = reg is set, D = data is set */
+
+#define DCOY_ARG_RVALUE     0x00    /* R-: register */
+#define DCOY_ARG_RLOOKUP    0x08    /* R-: [register] */
+#define DCOY_ARG_ROFFSET    0x10    /* RD: [register + next word] */
+
+#define DCOY_ARG_PUSHPOP    0x18    /* --: [SP++] for read, [--SP] for write */
+#define DCOY_ARG_PEEK       0x19    /* --: [SP] */
+#define DCOY_ARG_PICK       0x1a    /* -D: [SP + immediate value] */
+
+#define DCOY_ARG_SP         0x1b    /* -- */
+#define DCOY_ARG_PC         0x1c    /* -- */
+#define DCOY_ARG_EX         0x1d    /* -- */
+
+#define DCOY_ARG_LOOKUP     0x1e    /* -D: [immediate value] */
+#define DCOY_ARG_VALUE      0x1f    /* -D: immediate value */
 
 
 /* Opcodes */
@@ -57,8 +94,6 @@ void dcoy_inst_disassemble (dcoy_word *code, char *out);
 #define DCOY_OP_STI  0x1e   /* set then increment I, J */
 #define DCOY_OP_STD  0x1f   /* set then decrement I, J */
 
-extern const char *dcoy_opcode_names[];
-
 
 /* Special opcodes */
 
@@ -74,43 +109,13 @@ extern const char *dcoy_opcode_names[];
 #define DCOY_SOP_HWQ 0x11   /* hardware query */
 #define DCOY_SOP_HWI 0x12   /* hardware interrupt */
 
+
+/* Disassembly */
+
+void dcoy_inst_write (dcoy_inst inst, char *out);
+
+extern const char *dcoy_opcode_names[];
 extern const char *dcoy_spec_opcode_names[];
-
-
-/* Arguments */
-
-#define DCOY_ARG_TYPE_RVALUE    0x00    /* register */
-#define DCOY_ARG_TYPE_RLOOKUP   0x08    /* [register] */
-#define DCOY_ARG_TYPE_ROFFSET   0x10    /* [register + next word] */
-#define DCOY_ARG_TYPE_MISC      0x18    /* all others */
-#define DCOY_ARG_TYPE_INLINE    0x20    /* -1..30 embedded in instruction */
-
-#define DCOY_ARG_PUSHPOP    0x18    /* [SP++] for read, [--SP] for write */
-#define DCOY_ARG_PEEK       0x19    /* [SP] */
-#define DCOY_ARG_PICK       0x1a    /* [SP + immediate value] */
-
-#define DCOY_ARG_SP         0x1b
-#define DCOY_ARG_PC         0x1c
-#define DCOY_ARG_EX         0x1d
-
-#define DCOY_ARG_NLOOKUP    0x1e    /* immediate value */
-#define DCOY_ARG_NVALUE     0x1f    /* [immediate value] */
-
-
-#define dcoy_arg_type(arg)      ( \
-    ((arg) & 0x20) ? DCOY_ARG_TYPE_INLINE : ((arg) & 0x18) \
-)
-
-#define dcoy_arg_register(arg)  ((arg) & 0x7)
-#define dcoy_arg_inline(arg)    ((dcoy_word)(((arg) & 0x1f) - 1))
-
-#define dcoy_arg_extra_words(arg)      ( \
-    dcoy_arg_type((arg)) == DCOY_ARG_TYPE_ROFFSET || \
-    (arg) == DCOY_ARG_PICK || \
-    (arg) == DCOY_ARG_NLOOKUP || \
-    (arg) == DCOY_ARG_NVALUE \
-)
-
 extern char dcoy_register_names[];
 
 #endif

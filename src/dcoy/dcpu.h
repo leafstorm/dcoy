@@ -11,9 +11,8 @@
 #define _dcoy_dcpu_h
 
 #include <stdbool.h>
+#include "dcoy/code.h"
 #include "dcoy/specs.h"
-
-#define SIGN(word)  ((dcoy_sword) (word))
 
 /* Execution flags */
 
@@ -61,6 +60,12 @@ void dcoy_dcpu_recover (dcoy_dcpu16 *d);
 
 
 /* Interpreter loop */
+
+#define dcoy_dcpu_read_inst(inst, d, offset) \
+    dcoy_inst_read((inst), (d)->mem, offset, DCOY_MEM_WORDS)
+
+#define dcoy_dcpu_read_pc(inst, d) \
+    dcoy_inst_read((inst), (d)->mem, (d)->pc, DCOY_MEM_WORDS)
 
 bool dcoy_dcpu_step (dcoy_dcpu16 *d);
 

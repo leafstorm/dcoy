@@ -58,136 +58,136 @@ void dcoy_dcpu_recover (dcoy_dcpu16 *d) {
 
 /* Interpreter loop */
 
-#define NEXT_WORD (d->cycles++, d->mem[d->pc++])
-
-static dcoy_word process_a (dcoy_dcpu16 *d, int arg) {
-    switch (dcoy_arg_type(arg)) {
-        case DCOY_ARG_TYPE_INLINE:
-            return dcoy_arg_inline(arg);
-
-        case DCOY_ARG_TYPE_RVALUE:
-            return d->reg[dcoy_arg_register(arg)];
-
-        case DCOY_ARG_TYPE_RLOOKUP:
-            return d->mem[d->reg[dcoy_arg_register(arg)]];
-
-        case DCOY_ARG_TYPE_ROFFSET:
-            return d->mem[d->reg[dcoy_arg_register(arg)] + NEXT_WORD];
-
-        default:
-            switch (arg) {
-                case DCOY_ARG_PUSHPOP:  return d->mem[d->sp++];
-                case DCOY_ARG_PEEK:     return d->mem[d->sp];
-                case DCOY_ARG_PICK:     return d->mem[d->sp + NEXT_WORD];
-                case DCOY_ARG_SP:       return d->sp;
-                case DCOY_ARG_PC:       return d->pc;
-                case DCOY_ARG_EX:       return d->ex;
-                case DCOY_ARG_NLOOKUP:  return d->mem[NEXT_WORD];
-                case DCOY_ARG_NVALUE:   return NEXT_WORD;
-                default:
-                    dcoy_dcpu_error(d, "Invalid a argument %x", arg);
-                    return 0;
-            }
+static dcoy_word get (dcoy_dcpu16 *d, dcoy_arg arg) {
+    switch (arg.type) {
+        case DCOY_ARG_RVALUE:   return d->reg[arg.reg];
+        case DCOY_ARG_RLOOKUP:  return d->mem[d->mem[arg.reg]];
+        case DCOY_ARG_ROFFSET:  return d->mem[(dcoy_word)(arg.reg + arg.data)];
+        case DCOY_ARG_PUSHPOP:  return d->mem[d->sp++];
+        case DCOY_ARG_PEEK:     return d->mem[d->sp];
+        case DCOY_ARG_PICK:     return d->mem[(dcoy_word)(d->sp + arg.data)];
+        case DCOY_ARG_SP:       return d->sp;
+        case DCOY_ARG_PC:       return d->pc;
+        case DCOY_ARG_EX:       return d->ex;
+        case DCOY_ARG_LOOKUP:   return d->mem[arg.data];
+        case DCOY_ARG_VALUE:    return arg.data;
+        default:                dcoy_dcpu_error(d, "Invalid argument type %x",
+                                                arg.type);
+                                return 0;
     }
 }
 
 
-static dcoy_word process_b (dcoy_dcpu16 *d, int arg, dcoy_word **dest) {
-    *dest = NULL;
-
-    switch (dcoy_arg_type(arg)) {
-        case DCOY_ARG_TYPE_INLINE:
-            return dcoy_arg_inline(arg);
-
-        case DCOY_ARG_TYPE_RVALUE:
-            *dest = d->reg + dcoy_arg_register(arg);
-            break;
-
-        case DCOY_ARG_TYPE_RLOOKUP:
-            *dest = d->mem + d->reg[dcoy_arg_register(arg)];
-            break;
-
-        case DCOY_ARG_TYPE_ROFFSET:
-            *dest = d->mem + d->reg[dcoy_arg_register(arg)] + NEXT_WORD;
-            break;
-
-        default:
-            switch (arg) {
-                case DCOY_ARG_PUSHPOP:  *dest = d->mem + (--(d->sp)); break;
-                case DCOY_ARG_PEEK:     *dest = d->mem + d->sp; break;
-                case DCOY_ARG_PICK:     *dest = d->mem + (d->sp + NEXT_WORD);
-                                        break;
-                case DCOY_ARG_SP:       *dest = &d->sp; break;
-                case DCOY_ARG_PC:       *dest = &d->pc; break;
-                case DCOY_ARG_EX:       *dest = &d->ex; break;
-                case DCOY_ARG_NLOOKUP:  *dest = d->mem + NEXT_WORD; break;
-                case DCOY_ARG_NVALUE:   d->cycles++;
-                                        *dest = d->mem + d->pc++;
-                                        break;
-                default:
-                    dcoy_dcpu_error(d, "Invalid b argument %x", arg);
-                    return 0;
-            }
+static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
+    switch (arg.type) {
+        case DCOY_ARG_RVALUE:   d->reg[arg.reg] = value;                break;
+        case DCOY_ARG_RLOOKUP:  d->mem[d->mem[arg.reg]] = value;        break;
+        case DCOY_ARG_ROFFSET:  d->mem[(dcoy_word)(arg.reg + arg.data)] = value;
+                                break;
+        case DCOY_ARG_PUSHPOP:  d->mem[--d->sp] = value;                break;
+        case DCOY_ARG_PEEK:     d->mem[d->sp] = value;                  break;
+        case DCOY_ARG_PICK:     d->mem[(dcoy_word)(d->sp + arg.data)] = value;
+                                break;
+        case DCOY_ARG_SP:       d->sp = value;                          break;
+        case DCOY_ARG_PC:       d->pc = value;                          break;
+        case DCOY_ARG_EX:       d->ex = value;                          break;
+        case DCOY_ARG_LOOKUP:   d->mem[arg.data] = value;               break;
+        case DCOY_ARG_VALUE:    break;
+        default:                dcoy_dcpu_error(d, "Invalid argument type %x",
+                                                arg.type);
+                                break;
     }
-    if (*dest != NULL) return **dest;
-    return 0;       /* this should probably never happen */
 }
 
 
 #define GUARD_ERROR if (dcoy_dcpu_flag(d, DCOY_FLAG_ERROR)) return false
 
+#define SIGN(word)  ((dcoy_sword) (word))
+
+#define USE_A do {a = get(d, inst.a); GUARD_ERROR;} while (0)
+#define USE_B do {b = get(d, inst.b); GUARD_ERROR;} while (0)
+
+/* break_res sets b to res and breaks */
+#define break_res set(d, inst.b, res); break
+/* break_res sets b to res, then EX to ex, and breaks */
+#define break_math set(d, inst.b, res); d->ex = ex; break
+
 bool dcoy_dcpu_step (dcoy_dcpu16 *d) {
     GUARD_ERROR;
-    dcoy_word inst = NEXT_WORD;
+    dcoy_inst inst;
+    unsigned int inst_size = dcoy_dcpu_read_pc(&inst, d);
+    d->pc += inst_size;
 
-    int op = dcoy_inst_opcode(inst);
-
-    if (op != SPEC) {
+    if (!inst.special) {
         /* Standard opcode */
-        dcoy_word a, b, *dest;
+        dcoy_word a = 0, b = 0;
         dcoy_dword res = 0;
+        dcoy_word ex = 0;
 
-        a = process_a(d, dcoy_inst_arg_a(inst)); GUARD_ERROR;
-        b = process_b(d, dcoy_inst_arg_b(inst), &dest); GUARD_ERROR;
-
-        switch (op) {
-            case SET:   res = a; break;
-            case ADD:   res = b + a;
-                        d->ex = res >> 16;
-                        break;
-            case SUB:   res = b - a;
-                        d->ex = res >> 16;
+        switch (inst.opcode) {
+            case SET:   USE_A;
+                        set(d, inst.b, a);
                         break;
 
-            case MUL:   res = b * a;
-                        d->ex = (res >> 16) & 0xffff;
-                        break;
-            case MLI:   res = SIGN(b) * SIGN(a);
-                        d->ex = (res >> 16) & 0xffff;
-                        break;
+            case ADD:   USE_A; USE_B;
+                        res = a + b;
+                        ex = res >> 16;
+                        break_math;
 
-            case DIV:   if (a == 0) {
-                            res = 0; d->ex = 0;
+            case SUB:   USE_A; USE_B;
+                        res = b - a;
+                        ex = res >> 16;
+                        break_math;
+
+            case MUL:   USE_A; USE_B;
+                        res = b * a;
+                        ex = (res >> 16) & 0xffff;
+                        break_math;
+
+            case MLI:   USE_A; USE_B;
+                        res = SIGN(b) * SIGN(a);
+                        ex = (res >> 16) & 0xffff;
+                        break_math;
+
+            case DIV:   USE_A; USE_B;
+                        if (a == 0) {
+                            res = 0; ex = 0;
                         } else {
                             res = b / a;
-                            d->ex = ((b << 16) / a) & 0xffff;
+                            ex = ((b << 16) / a) & 0xffff;
                         }
-                        break;
-            case DVI:   if (a == 0) {
-                            res = 0; d->ex = 0;
+                        break_math;
+
+            case DVI:   USE_A; USE_B;
+                        if (a == 0) {
+                            res = 0; ex = 0;
                         } else {
                             dcoy_sword sa = SIGN(a), sb = SIGN(b);
                             res = sb / sa;
-                            d->ex = ((sb << 16) / sa) & 0xffff;
+                            ex = ((sb << 16) / sa) & 0xffff;
                         }
-                        break;
+                        break_math;
 
-            case MOD:   res = a == 0 ? 0 : b % a; break;
-            case MDI:   break;
+            case MOD:   USE_A; USE_B;
+                        res = a == 0 ? 0 : b % a;
+                        break_res;
 
-            case AND:   res = b & a; break;
-            case BOR:   res = b | a; break;
-            case XOR:   res = b ^ a; break;
+            case MDI:   USE_A; USE_B;
+                        res = a == 0 ? 0 : SIGN(b) % SIGN(a);
+                        break_res;
+
+            case AND:   USE_A; USE_B;
+                        res = b & a;
+                        break_res;
+
+            case BOR:   USE_A; USE_B;
+                        res = b | a;
+                        break_res;
+
+            case XOR:   USE_A; USE_B;
+                        res = b ^ a;
+                        break_res;
+
             case SHR:   break;
             case ASR:   break;
             case SHL:   break;
@@ -203,23 +203,27 @@ bool dcoy_dcpu_step (dcoy_dcpu16 *d) {
 
             case ADX:   break;
             case SBX:   break;
-            case STI:   res = a; d->reg[I]++; d->reg[J]++; break;
-            case STD:   res = a; d->reg[I]--; d->reg[J]--; break;
+
+            case STI:   USE_A;
+                        set(d, inst.a, a);
+                        d->reg[I]++;
+                        d->reg[J]++;
+                        break;
+
+            case STD:   USE_A;
+                        set(d, inst.b, a);
+                        d->reg[I]--;
+                        d->reg[J]--;
+                        break;
 
             default:
-                dcoy_dcpu_error(d, "Invalid opcode %x", op);
+                dcoy_dcpu_error(d, "Invalid opcode %x", inst.opcode);
                 return false;
         }
-        if (dest != NULL) *dest = res;
         return true;
 
     } else {
-        /* Special opcode */
-        int sop = dcoy_inst_arg_b(inst);
-        dcoy_word a = process_a(d, dcoy_inst_arg_a(inst));
-        (void) a;
-
-        switch (sop) {
+        switch (inst.opcode) {
             case JSR:   break;
 
             case INT:   break;
@@ -233,7 +237,7 @@ bool dcoy_dcpu_step (dcoy_dcpu16 *d) {
             case HWI:   break;
 
             default:
-                dcoy_dcpu_error(d, "Invalid special opcode %x", sop);
+                dcoy_dcpu_error(d, "Invalid special opcode %x", inst.opcode);
                 return false;
         }
         return true;

@@ -52,17 +52,19 @@ int main (int argc, char *argv[]) {
     );
 
     bool running = true;
-    char current_inst[64] = "";
+    dcoy_inst current_inst;
+    char disassembled[64] = "";
 
     while (running) {
-        dcoy_inst_disassemble(d->mem + d->pc, current_inst);
+        dcoy_dcpu_read_pc(&current_inst, d);
+        dcoy_inst_write(current_inst, disassembled);
 
         printf(
             "%-6d  %04x  %04x %04x %04x %04x %04x %04x %04x %04x %04x  %s\n",
             d->cycles, d->pc,
             d->reg[A], d->reg[B], d->reg[C], d->reg[X], d->reg[Y], d->reg[Z],
             d->reg[I], d->reg[J], d->ex,
-            current_inst
+            disassembled
         );
         running = dcoy_dcpu_step(d);
     }
