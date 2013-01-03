@@ -79,12 +79,17 @@ void dcoy_dcpu_error_clear (dcoy_dcpu16 *d);
     dcoy_inst_read((inst), (d)->mem, (d)->pc, DCOY_MEM_WORDS)
 
 /* implemented in dcoy/dcpu/exec.c */
-bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst);
+unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst);
 
 
 /* Interpreter loop */
 
-bool dcoy_dcpu_step (dcoy_dcpu16 *d);
+unsigned int dcoy_dcpu_step (dcoy_dcpu16 *d);
+
+#define dcoy_dcpu_running(d)    (!dcoy_dcpu_flag(d, DCOY_DCPU_FLAG_HALT))
+#define dcoy_dcpu_halted(d)     dcoy_dcpu_flag(d, DCOY_DCPU_FLAG_HALT)
+#define dcoy_dcpu_halt(d)       dcoy_dcpu_flag_set(d, DCOY_DCPU_FLAG_HALT)
+#define dcoy_dcpu_unhalt(d)     dcoy_dcpu_flag_clear(d, DCOY_DCPU_FLAG_CLEAR)
 
 
 /* Interrupts */

@@ -26,7 +26,8 @@ static dcoy_word get (dcoy_dcpu16 *d, dcoy_arg arg) {
         case DCOY_ARG_PC:       return d->pc;
         case DCOY_ARG_EX:       return d->ex;
         case DCOY_ARG_LOOKUP:   return d->mem[arg.data];
-        case DCOY_ARG_VALUE:    return arg.data;
+        case DCOY_ARG_VALUE:
+        case DCOY_ARG_IVALUE:   return arg.data;
         default:                dcoy_dcpu_error(d, INVALID_ARG_TYPE, arg.type);
                                 return 0;
     }
@@ -47,14 +48,15 @@ static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
         case DCOY_ARG_PC:       d->pc = value;                          break;
         case DCOY_ARG_EX:       d->ex = value;                          break;
         case DCOY_ARG_LOOKUP:   d->mem[arg.data] = value;               break;
-        case DCOY_ARG_VALUE:    break;
+        case DCOY_ARG_VALUE:
+        case DCOY_ARG_IVALUE:   break;
         default:                dcoy_dcpu_error(d, INVALID_ARG_TYPE, arg.type);
                                 break;
     }
 }
 
 
-#define GUARD_ERROR if ((d)->error_code) return false
+#define GUARD_ERROR if ((d)->error_code) return 0
 
 #define SIGN(word)  ((dcoy_sword) (word))
 
@@ -62,11 +64,13 @@ static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
 #define USE_B do {b = get(d, inst.b); GUARD_ERROR;} while (0)
 
 /* break_res sets b to res and breaks */
-#define break_res set(d, inst.b, res); break
+#define break_res set(d, inst.b, res); GUARD_ERROR; break
 /* break_res sets b to res, then EX to ex, and breaks */
-#define break_math set(d, inst.b, res); d->ex = ex; break
+#define break_math set(d, inst.b, res); GUARD_ERROR; d->ex = ex; break
 
-bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
+unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
+    unsigned int cost = dcoy_inst_base_cost(inst);
+
     if (!inst.special) {
         /* Standard opcode */
         dcoy_word a = 0, b = 0;
@@ -154,7 +158,7 @@ bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
             case SBX:   break;
 
             case STI:   USE_A;
-                        set(d, inst.a, a);
+                        set(d, inst.b, a);
                         d->reg[I]++;
                         d->reg[J]++;
                         break;
@@ -166,9 +170,8 @@ bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
                         break;
 
             default:    dcoy_dcpu_error(d, INVALID_OPCODE, inst.opcode);
-                        return false;
+                        break;
         }
-        return true;
 
     } else {
         switch (inst.opcode) {
@@ -185,8 +188,9 @@ bool dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
             case HWI:   break;
 
             default:    dcoy_dcpu_error(d, INVALID_SPEC_OPCODE, inst.opcode);
-                        return false;
+                        break;
         }
-        return true;
     }
+
+    return d->error_code ? 0 : cost;
 }

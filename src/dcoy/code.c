@@ -14,11 +14,14 @@
 #include "dcoy/opcodes.h"
 #include "dcoy/specs.h"
 
+
+/* Instruction parsing */
+
 /* Returns true if the next_word was used, false if not */
 static bool read_arg (dcoy_arg *arg, unsigned int lead, dcoy_word next_word) {
     if (lead >= 0x20) {
         /* Inline immediate */
-        arg->type = DCOY_ARG_VALUE;
+        arg->type = DCOY_ARG_IVALUE;
         arg->reg = 0;
         arg->data = (lead & 0x1f) - 1;
         return false;
@@ -86,6 +89,58 @@ unsigned int dcoy_inst_read (dcoy_inst *inst, dcoy_word *buf,
 }
 
 
+/* Instruction costing */
+
+unsigned int dcoy_inst_base_cost (dcoy_inst inst) {
+    unsigned int base = 0;
+
+    if (inst.special) {
+        base = inst.opcode < 0x20
+             ? dcoy_special_opcode_base_costs[inst.opcode]
+             : 0;
+        return base ? base + dcoy_arg_base_cost(inst.a) : 0;
+    } else {
+        base = inst.opcode < 0x20
+             ? dcoy_opcode_base_costs[inst.opcode]
+             : 0;
+        return base ? base + dcoy_arg_base_cost(inst.a) +
+                             dcoy_arg_base_cost(inst.b)
+                    : 0;
+    }
+}
+
+
+unsigned int dcoy_arg_base_cost (dcoy_arg arg) {
+    switch (arg.type) {
+        case DCOY_ARG_ROFFSET:
+        case DCOY_ARG_PICK:
+        case DCOY_ARG_LOOKUP:
+        case DCOY_ARG_VALUE:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+
+const unsigned int dcoy_opcode_base_costs[] = {
+    0,  1,  2,  2,  2,  2,  3,  3,
+    3,  3,  1,  1,  1,  1,  1,  1,
+    2,  2,  2,  2,  2,  2,  2,  2,
+    0,  0,  3,  3,  0,  0,  2,  2
+};
+
+const unsigned int dcoy_special_opcode_base_costs[] = {
+    0,  3,  0,  0,  0,  0,  0,  0,
+    4,  1,  1,  3,  2,  0,  0,  0,
+    2,  4,  4,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0
+};
+
+
+/* Disassembly */
+
 const char *dcoy_opcode_names[] = {
     "SPEC", "SET",  "ADD",  "SUB",  "MUL",  "MLI",  "DIV",  "DVI",
     "MOD",  "MDI",  "AND",  "BOR",  "XOR",  "SHR",  "ASL",  "SHL",
@@ -122,7 +177,13 @@ void dcoy_arg_write (dcoy_arg arg, bool set_ctx, char *out) {
         case DCOY_ARG_PC:       strcpy(out,  "PC");                     break;
         case DCOY_ARG_EX:       strcpy(out,  "EX");                     break;
         case DCOY_ARG_LOOKUP:   sprintf(out, "[0x%04x]", arg.data);     break;
-        case DCOY_ARG_VALUE:    sprintf(out, "0x%04x", arg.data);       break;
+        case DCOY_ARG_VALUE:
+        case DCOY_ARG_IVALUE:   if (arg.data == 0xffff || arg.data < 10) {
+                                    sprintf(out, "%d", (dcoy_sword)(arg.data));
+                                } else {
+                                    sprintf(out, "0x%04x", arg.data);
+                                }
+                                break;
         default:                sprintf(out, "<0x%02x>", arg.type);     break;
     }
 }

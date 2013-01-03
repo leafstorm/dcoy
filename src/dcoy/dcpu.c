@@ -45,6 +45,10 @@ void dcoy_dcpu_error_set (dcoy_dcpu16 *d, unsigned int code,
     d->error_message = message;
     d->error_data = data;
     d->error_pc = d->pc;
+
+    /* in the future, error interceptors will be invoked here */
+
+    dcoy_dcpu_halt(d);
 }
 
 
@@ -58,7 +62,7 @@ void dcoy_dcpu_error_clear (dcoy_dcpu16 *d) {
 
 /* Interpreter loop */
 
-bool dcoy_dcpu_step (dcoy_dcpu16 *d) {
+unsigned int dcoy_dcpu_step (dcoy_dcpu16 *d) {
     /* Check that the DCPU is still online. */
     if (dcoy_dcpu_flag(d, DCOY_DCPU_FLAG_HALT)) {
         return false;
@@ -70,10 +74,8 @@ bool dcoy_dcpu_step (dcoy_dcpu16 *d) {
     d->pc += inst_size;
 
     /* Run the instruction and incur the cost */
-    if (!dcoy_dcpu_exec(d, inst)) {
-        return false;
-    }
-    d->cycles++;
+    unsigned int cost = dcoy_dcpu_exec(d, inst);
+    d->cycles += cost;
 
-    return true;
+    return cost;
 }

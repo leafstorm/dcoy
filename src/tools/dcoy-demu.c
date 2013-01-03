@@ -51,11 +51,10 @@ int main (int argc, char *argv[]) {
         "------  ----  ---- ---- ---- ---- ---- ---- ---- ---- ----  ------------\n"
     );
 
-    bool running = true;
     dcoy_inst current_inst;
     char disassembled[64] = "";
 
-    while (running) {
+    while (dcoy_dcpu_running(d)) {
         dcoy_dcpu_read_pc(&current_inst, d);
         dcoy_inst_write(current_inst, disassembled);
 
@@ -66,7 +65,7 @@ int main (int argc, char *argv[]) {
             d->reg[I], d->reg[J], d->ex,
             disassembled
         );
-        running = dcoy_dcpu_step(d);
+        (void)dcoy_dcpu_step(d);
     }
 
     printf("        Error: %s 0x%04x (%d) at 0x%04x\n",

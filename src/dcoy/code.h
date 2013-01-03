@@ -39,8 +39,19 @@ unsigned int dcoy_inst_read (dcoy_inst *inst, dcoy_word *buf,
 #define dcoy_inst_arg_b(inst)   (((inst) & 0x3e0) >> 5)
 
 
-/* Argument types */
-/* R = reg is set, D = data is set */
+/* Instruction costing */
+
+unsigned int dcoy_inst_base_cost (dcoy_inst inst);
+unsigned int dcoy_arg_base_cost (dcoy_arg arg);
+
+extern const unsigned int dcoy_opcode_base_costs[];
+extern const unsigned int dcoy_special_opcode_base_costs[];
+
+
+/* Argument types
+ * R = reg is set, D = data is set
+ * While the values of these constants do have significance,
+ * do not assume they will stay the same. */
 
 #define DCOY_ARG_RVALUE     0x00    /* R-: register */
 #define DCOY_ARG_RLOOKUP    0x08    /* R-: [register] */
@@ -56,6 +67,9 @@ unsigned int dcoy_inst_read (dcoy_inst *inst, dcoy_word *buf,
 
 #define DCOY_ARG_LOOKUP     0x1e    /* -D: [immediate value] */
 #define DCOY_ARG_VALUE      0x1f    /* -D: immediate value */
+
+#define DCOY_ARG_IVALUE     0x20    /* -D: immediate value in first word
+                                     *     same as ARG_VALUE, but faster */
 
 
 /* Opcodes */
