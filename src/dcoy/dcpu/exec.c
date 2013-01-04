@@ -17,8 +17,10 @@
 static dcoy_word get (dcoy_dcpu16 *d, dcoy_arg arg) {
     switch (arg.type) {
         case DCOY_ARG_RVALUE:   return d->reg[arg.reg];
-        case DCOY_ARG_RLOOKUP:  return d->mem[d->mem[arg.reg]];
-        case DCOY_ARG_ROFFSET:  return d->mem[(dcoy_word)(arg.reg + arg.data)];
+        case DCOY_ARG_RLOOKUP:  return d->mem[d->reg[arg.reg]];
+        case DCOY_ARG_ROFFSET:  return d->mem[
+                                    (dcoy_word)(d->reg[arg.reg] + arg.data)
+                                ];
         case DCOY_ARG_PUSHPOP:  return d->mem[d->sp++];
         case DCOY_ARG_PEEK:     return d->mem[d->sp];
         case DCOY_ARG_PICK:     return d->mem[(dcoy_word)(d->sp + arg.data)];
@@ -37,8 +39,10 @@ static dcoy_word get (dcoy_dcpu16 *d, dcoy_arg arg) {
 static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
     switch (arg.type) {
         case DCOY_ARG_RVALUE:   d->reg[arg.reg] = value;                break;
-        case DCOY_ARG_RLOOKUP:  d->mem[d->mem[arg.reg]] = value;        break;
-        case DCOY_ARG_ROFFSET:  d->mem[(dcoy_word)(arg.reg + arg.data)] = value;
+        case DCOY_ARG_RLOOKUP:  d->mem[d->reg[arg.reg]] = value;        break;
+        case DCOY_ARG_ROFFSET:  d->mem[
+                                    (dcoy_word)(d->reg[arg.reg] + arg.data)
+                                ] = value;
                                 break;
         case DCOY_ARG_PUSHPOP:  d->mem[--d->sp] = value;                break;
         case DCOY_ARG_PEEK:     d->mem[d->sp] = value;                  break;
