@@ -203,8 +203,15 @@ unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
                         if (SIGN(b) >= SIGN(a)) skip(d, &cost);
                         break;
 
-            case ADX:   break;
-            case SBX:   break;
+            case ADX:   USE_A; USE_B;
+                        res = a + b + d->ex;
+                        ex = res >> 16;
+                        break_math;
+
+            case SBX:   USE_A; USE_B;
+                        res = b - a + d->ex;
+                        ex = res >> 16;
+                        break_math;
 
             case STI:   USE_A;
                         set(d, inst.b, a);
