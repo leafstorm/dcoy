@@ -56,6 +56,19 @@ static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
 }
 
 
+static void skip (dcoy_dcpu16 *d, unsigned int *cost) {
+    dcoy_inst next;
+    unsigned int skipped = 0;
+
+    do {
+        d->pc += dcoy_dcpu_read_pc(&next, d);
+        skipped++;
+    } while (next.opcode >= IFB && next.opcode <= IFU);
+
+    *cost += skipped - 1;
+}
+
+
 #define GUARD_ERROR if ((d)->error_code) return 0
 
 #define SIGN(word)  ((dcoy_sword) (word))
@@ -158,14 +171,37 @@ unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
                         ex = ashr((b << 16), a) & 0xffff;
                         break_math;
 
-            case IFB:   break;
-            case IFC:   break;
-            case IFE:   break;
-            case IFN:   break;
-            case IFG:   break;
-            case IFA:   break;
-            case IFL:   break;
-            case IFU:   break;
+            case IFB:   USE_A; USE_B;
+                        if (!(b & a)) skip(d, &cost);
+                        break;
+
+            case IFC:   USE_A; USE_B;
+                        if (b & a) skip(d, &cost);
+                        break;
+
+            case IFE:   USE_A; USE_B;
+                        if (b != a) skip(d, &cost);
+                        break;
+
+            case IFN:   USE_A; USE_B;
+                        if (b == a) skip(d, &cost);
+                        break;
+
+            case IFG:   USE_A; USE_B;
+                        if (b <= a) skip(d, &cost);
+                        break;
+
+            case IFA:   USE_A; USE_B;
+                        if (SIGN(b) <= SIGN(a)) skip(d, &cost);
+                        break;
+
+            case IFL:   USE_A; USE_B;
+                        if (b >= a) skip(d, &cost);
+                        break;
+
+            case IFU:   USE_A; USE_B;
+                        if (SIGN(b) >= SIGN(a)) skip(d, &cost);
+                        break;
 
             case ADX:   break;
             case SBX:   break;
