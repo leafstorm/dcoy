@@ -28,13 +28,13 @@ typedef int32_t     dcoy_sdword;
 #define DCOY_REG_COUNT      8
 
 #define DCOY_REG_A  0
-#define DCOY_REG_B  0
-#define DCOY_REG_C  0
-#define DCOY_REG_X  0
-#define DCOY_REG_Y  0
-#define DCOY_REG_Z  0
-#define DCOY_REG_I  0
-#define DCOY_REG_J  0
+#define DCOY_REG_B  1
+#define DCOY_REG_C  2
+#define DCOY_REG_X  3
+#define DCOY_REG_Y  4
+#define DCOY_REG_Z  5
+#define DCOY_REG_I  6
+#define DCOY_REG_J  7
 
 
 /* Interrupts */
