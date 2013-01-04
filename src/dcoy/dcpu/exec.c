@@ -234,8 +234,13 @@ unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
         }
 
     } else {
+        dcoy_word a = 0;
+
         switch (inst.opcode) {
-            case JSR:   break;
+            case JSR:   USE_A;
+                        d->mem[--d->sp] = d->pc;
+                        d->pc = a;
+                        break;
 
             case INT:   break;
             case IAG:   break;
