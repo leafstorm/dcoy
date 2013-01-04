@@ -242,11 +242,30 @@ unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
                         d->pc = a;
                         break;
 
-            case INT:   break;
-            case IAG:   break;
-            case IAS:   break;
-            case RFI:   break;
-            case IAQ:   break;
+            case INT:   USE_A;
+                        dcoy_dcpu_interrupt(d, a);
+                        break;
+
+            case IAG:   set(d, inst.a, d->ia);
+                        break;
+
+            case IAS:   USE_A;
+                        d->ia = a;
+                        break;
+
+            case RFI:   dcoy_dcpu_flag_unset(d, DCOY_DCPU_FLAG_IAQ);
+                        /* pop A, then PC */
+                        d->reg[A] = d->mem[d->sp++];
+                        d->pc = d->mem[d->sp++];
+                        break;
+
+            case IAQ:   USE_A;
+                        if (a) {
+                            dcoy_dcpu_flag_set(d, DCOY_DCPU_FLAG_IAQ);
+                        } else {
+                            dcoy_dcpu_flag_unset(d, DCOY_DCPU_FLAG_IAQ);
+                        }
+                        break;
 
             case HWN:   break;
             case HWQ:   break;

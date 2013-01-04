@@ -16,9 +16,9 @@
 
 /* Execution flags */
 
-#define DCOY_DCPU_FLAG_QUEUE_INTS       (1 << 0)
-#define DCOY_DCPU_FLAG_HALT             (1 << 4)
-#define DCOY_DCPU_FLAG_ON_FIRE          (1 << 5)
+#define DCOY_DCPU_FLAG_IAQ          (1 << 0)
+#define DCOY_DCPU_FLAG_HALT         (1 << 4)
+#define DCOY_DCPU_FLAG_ON_FIRE      (1 << 5)
 
 #define dcoy_dcpu_flag(d, flag)         ((d)->flags & (flag))
 #define dcoy_dcpu_flag_set(d, flag)     ((d)->flags |= (flag))
@@ -39,9 +39,9 @@ typedef struct dcoy_dcpu16 {
 
     dcoy_word mem[DCOY_MEM_WORDS];
 
-    dcoy_word iq[DCOY_INT_QUEUE_SIZE];
-    unsigned int iq_front;
-    unsigned int iq_back;
+    dcoy_word int_queue[DCOY_INT_QUEUE_SIZE];
+    unsigned int int_queue_start;
+    unsigned int int_queue_count;
 
     unsigned int error_code;
     const char *error_message;
@@ -94,7 +94,16 @@ unsigned int dcoy_dcpu_step (dcoy_dcpu16 *d);
 
 /* Interrupts */
 
-void dcoy_dcpu_interrupt (dcoy_word mesg);
+#define DCOY_DCPU_INT_NONE_QUEUED   1
+#define DCOY_DCPU_INT_TRIGGERED     2
+#define DCOY_DCPU_INT_NO_HANDLER    3
+#define DCOY_DCPU_INT_IAQ_ON        0
 
+bool dcoy_dcpu_interrupt (dcoy_dcpu16 *d, dcoy_word message);
+unsigned int dcoy_dcpu_interrupt_trigger (dcoy_dcpu16 *d);
+
+#define dcoy_dcpu_interrupt_will_trigger(d) ( \
+    (d)->int_queue_count && !dcoy_dcpu_flag((d), DCOY_DCPU_FLAG_IAQ) \
+)
 
 #endif
