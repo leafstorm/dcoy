@@ -59,6 +59,8 @@ static void set (dcoy_dcpu16 *d, dcoy_arg arg, dcoy_word value) {
 #define GUARD_ERROR if ((d)->error_code) return 0
 
 #define SIGN(word)  ((dcoy_sword) (word))
+#define ashr(v, by) (((v) < 0 && (by) > 0) ? ((v) >> (by)) | ((v) & 0x8000) \
+                                           : (v) >> (by))
 
 #define USE_A do {a = get(d, inst.a); GUARD_ERROR;} while (0)
 #define USE_B do {b = get(d, inst.b); GUARD_ERROR;} while (0)
@@ -141,9 +143,20 @@ unsigned int dcoy_dcpu_exec (dcoy_dcpu16 *d, dcoy_inst inst) {
                         res = b ^ a;
                         break_res;
 
-            case SHR:   break;
-            case ASR:   break;
-            case SHL:   break;
+            case SHR:   USE_A; USE_B;
+                        res = b >> a;
+                        ex = ashr((b << 16), a) & 0xffff;
+                        break_math;
+
+            case ASR:   USE_A; USE_B;
+                        res = ashr(b, a);
+                        ex = ((b << 16) >> a) & 0xffff;
+                        break_math;
+
+            case SHL:   USE_A; USE_B;
+                        res = b << a;
+                        ex = ashr((b << 16), a) & 0xffff;
+                        break_math;
 
             case IFB:   break;
             case IFC:   break;

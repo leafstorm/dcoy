@@ -143,7 +143,7 @@ const unsigned int dcoy_special_opcode_base_costs[] = {
 
 const char *dcoy_opcode_names[] = {
     "SPEC", "SET",  "ADD",  "SUB",  "MUL",  "MLI",  "DIV",  "DVI",
-    "MOD",  "MDI",  "AND",  "BOR",  "XOR",  "SHR",  "ASL",  "SHL",
+    "MOD",  "MDI",  "AND",  "BOR",  "XOR",  "SHR",  "ASR",  "SHL",
     "IFB",  "IFC",  "IFE",  "IFN",  "IFG",  "IFA",  "IFL",  "IFU",
     NULL,   NULL,   "ADX",  "SBX",  NULL,   NULL,   "STI",  "STD"
 };
